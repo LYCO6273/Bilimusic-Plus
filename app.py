@@ -75,7 +75,7 @@ def safe_filename(name):
 
 # -------------------- Streamlit 界面 --------------------
 st.set_page_config(page_title="Bilimusic +", page_icon="🎵")
-st.title("bilimusic +")
+st.title("Bilimusic +")
 st.markdown("轻量化图形化的B站音频提取工具")
 st.markdown("")
 st.markdown("输入视频链接，我们开始吧——")
