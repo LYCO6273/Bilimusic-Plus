@@ -53,7 +53,6 @@ def get_audio_download_url(bvid, cid):
             headers=headers,
             timeout=10
         ).json()
-        # 有时返回的baseUrl可能是数组，取第一个
         audio_url = audio_res['data']['dash']['audio'][0]['baseUrl']
         return audio_url
     except Exception as e:
@@ -97,31 +96,64 @@ if url_input:
         st.stop()
     title, author, pic_url = info
 
+    # ----- 下载封面用于预览（解决防盗链）-----
+    # 清理旧的预览文件
+    if 'preview_cover' in st.session_state:
+        old_file = Path(st.session_state['preview_cover'])
+        if old_file.exists():
+            try:
+                old_file.unlink()
+            except:
+                pass
+
+    # 下载新的预览封面
+    preview_temp = Path(tempfile.gettempdir()) / f"preview_cover_{uuid.uuid4().hex}.jpg"
+    try:
+        with st.spinner("正在加载封面预览..."):
+            download_file(pic_url, get_headers(bv), preview_temp)
+        st.session_state['preview_cover'] = str(preview_temp)
+        st.session_state['last_bv'] = bv
+    except Exception as e:
+        st.error(f"封面预览下载失败: {e}")
+        st.session_state['preview_cover'] = None
+
     auto_title = title2musicTitle(title) or title
     st.info(f"原视频标题：{title}")
-    music_title = st.text_input("音乐标题（可修改）", value=auto_title)
+    music_title = st.text_input("音乐标题", value=auto_title)
     st.text(f"作者：{author}")
-    st.image(pic_url, caption="封面预览", width=300)
+
+    # 显示本地图片（如果可用）
+    if st.session_state.get('preview_cover') and Path(st.session_state['preview_cover']).exists():
+        st.image(st.session_state['preview_cover'], caption="封面预览", width=300)
+    else:
+        # 保底显示URL（可能失败）
+        st.image(pic_url, caption="封面预览（直接加载可能失败）", width=300)
 
     if st.button("开始下载并转换"):
         uid = uuid.uuid4().hex
         temp_dir = tempfile.gettempdir()
         audio_temp = Path(temp_dir) / f"temp_audio_{uid}.m4a"
-        cover_temp = Path(temp_dir) / f"temp_cover_{uid}.jpg"
+        # 优先使用已下载的预览封面
+        if st.session_state.get('preview_cover') and Path(st.session_state['preview_cover']).exists():
+            cover_temp = Path(st.session_state['preview_cover'])
+            need_clean_cover = False  # 标记不需要清理预览封面
+        else:
+            cover_temp = Path(temp_dir) / f"temp_cover_{uid}.jpg"
+            need_clean_cover = True
 
         safe_name = safe_filename(music_title)
         output_mp3 = Path(temp_dir) / f"{safe_name}_{uid}.mp3"
 
         try:
-            # 下载封面（也需要Referer？通常不需要，但加上无害）
-            with st.spinner("下载封面中..."):
-                headers = get_headers(bv)  # 使用带Referer的headers
-                download_file(pic_url, headers, cover_temp)
-            st.success("封面下载完成")
+            # 如果预览封面不存在，则重新下载
+            if need_clean_cover:
+                with st.spinner("下载封面中..."):
+                    download_file(pic_url, get_headers(bv), cover_temp)
+                st.success("封面下载完成")
 
             # 获取cid
             view_url = f"https://api.bilibili.com/x/web-interface/view?bvid={bv}"
-            view_res = requests.get(view_url, headers=headers).json()
+            view_res = requests.get(view_url, headers=get_headers(bv)).json()
             if view_res.get('code') != 0:
                 st.error("获取视频cid失败")
                 st.stop()
@@ -134,9 +166,9 @@ if url_input:
                 st.stop()
             st.success("获取音频链接成功")
 
-            # 下载音频（必须使用带Referer的headers）
+            # 下载音频
             with st.spinner("下载音频中（可能较慢）..."):
-                download_file(audio_url, headers, audio_temp)
+                download_file(audio_url, get_headers(bv), audio_temp)
             st.success("音频下载完成")
 
             # 使用ffmpeg合成MP3
@@ -173,7 +205,8 @@ if url_input:
         except Exception as e:
             st.error(f"处理过程中发生错误: {e}")
         finally:
-            # 清理临时文件
-            for p in [audio_temp, cover_temp, output_mp3]:
-                if p.exists():
-                    os.unlink(p)
+            # 清理临时文件（保留预览封面，因为它还会用于后续预览）
+            audio_temp.unlink(missing_ok=True)
+            output_mp3.unlink(missing_ok=True)
+            if need_clean_cover:
+                cover_temp.unlink(missing_ok=True)
