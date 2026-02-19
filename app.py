@@ -75,7 +75,7 @@ def download_file(url, headers, save_path):
 
 # -------------------- Streamlit 界面 --------------------
 st.set_page_config(page_title="B站音乐下载器", page_icon="🎵")
-st.title("🎵 B站音乐下载器")
+st.title("Bilimusic +")
 st.markdown("输入B站视频链接，提取音频并打包为带封面的MP3。")
 
 # 输入框
