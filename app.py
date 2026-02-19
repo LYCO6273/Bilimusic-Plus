@@ -75,16 +75,18 @@ def safe_filename(name):
     return name if name else "untitled"
 
 # -------------------- Streamlit 界面 --------------------
-st.set_page_config(page_title="B站音乐下载器", page_icon="🎵")
-st.title("🎵 B站音乐下载器")
-st.markdown("输入B站视频链接，提取音频并打包为带封面的MP3。")
+st.set_page_config(page_title="Bilimusic +", page_icon="🎵")
+st.title("bilimusic +")
+st.markdown("轻量化图形化的B站音频提取工具")
+st.markdown("")
+st.markdown("输入视频链接，我们开始吧——")
 
 url_input = st.text_input("视频链接", placeholder="https://www.bilibili.com/video/BVxxx")
 
 if url_input:
     bv = url2bv(url_input)
     if not bv:
-        st.error("无法解析BV号，请检查链接格式")
+        st.error("无法解析BV号，还请再次检查链接格式")
         st.stop()
     st.success(f"解析到BV号：{bv}")
 
