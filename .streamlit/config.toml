@@ -1,0 +1,19 @@
+[theme]
+# 主色调：B站代表性粉色
+primaryColor = "#FB7299"
+
+# 背景色：浅灰（保持清爽，也可尝试深色模式，这里采用浅色背景）
+backgroundColor = "#FFFFFF"
+
+# 次背景色（用于侧边栏、卡片等）：接近 B 站视频页面的背景灰
+secondaryBackgroundColor = "#F6F7F8"
+
+# 文字颜色：深灰色，保证对比度
+textColor = "#18191C"
+
+# 字体：可选，默认字体即可；如需指定可使用 font
+# font = "sans serif"
+
+# 可选：如果希望侧边栏默认为展开状态
+[client]
+showSidebarNavigation = true
