@@ -6,6 +6,7 @@ import tempfile
 import os
 import uuid
 from pathlib import Path
+import re
 
 # -------------------- 工具函数 --------------------
 def get_headers(bv=None):
