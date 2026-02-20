@@ -206,7 +206,7 @@ if st.session_state.video_info:
                 audio_url = get_audio_download_url(bv, cid)
             if not audio_url:
                 st.stop()
-            st.success("获取音频链接成功")
+            st.success("链接获取好了")
 
             # 下载音频
             with st.spinner("在下载音频..."):
@@ -232,7 +232,7 @@ if st.session_state.video_info:
                 if result.returncode != 0:
                     st.error(f"FFmpeg 转换失败，错误信息：\n{result.stderr}")
                     raise Exception("FFmpeg error")
-            st.success("转换成功！")
+            st.success("格式转换好了")
 
             # 提供下载按钮
             with open(output_mp3, "rb") as f:
