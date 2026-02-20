@@ -27,11 +27,6 @@ requests
 ### 系统依赖
 - **ffmpeg**：用于音频合成与元数据嵌入，需添加到系统PATH环境变量。
 
-安装 ffmpeg 参考：
-- **Windows**：从 [ffmpeg官网](https://ffmpeg.org/download.html) 下载，将 `bin` 目录加入PATH。
-- **macOS**：`brew install ffmpeg`
-- **Linux**（Ubuntu/Debian）：`sudo apt install ffmpeg`
-
 兼容性未经全面测试，若遇问题请检查依赖版本或反馈。
 
 ---
@@ -43,12 +38,9 @@ requests
 您可以：
 - 自由使用、修改、分发源代码
 - 用于个人或教育项目
-- 用于商业项目（但需保留原作者版权声明）
 
 您必须：
 - 在衍生作品中保留原作者的版权声明和许可证文本
-
-完整许可证条款见 [LICENSE](LICENSE) 文件。
 
 ---
 
@@ -56,4 +48,3 @@ requests
 
 由 [@LYCO6273](https://github.com/LYCO6273) 开发  
 联系方式：lyco_p@163.com  
-GitHub 仓库：[https://github.com/LYCO6273/Bilimusic-plus](https://github.com/LYCO6273/Bilimusic-plus)
