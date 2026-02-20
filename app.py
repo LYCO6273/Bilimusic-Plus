@@ -92,28 +92,6 @@ def safe_filename(name):
 # -------------------- Streamlit 界面 --------------------
 st.set_page_config(page_title="Bilimusic +", page_icon="🎵", layout="wide")
 
-st.markdown("""
-<style>
-/* 22娘蓝 - success 消息 */
-div[data-testid="stAlert"]:has(div[data-icon=":material/check_circle:"]) {
-    background-color: #00a1d6 !important;
-    border-left-color: #0077b3 !important;
-}
-div[data-testid="stAlert"]:has(div[data-icon=":material/check_circle:"]) .st-cx {
-    color: white !important;
-}
-
-/* 33娘蓝 - info 消息 */
-div[data-testid="stAlert"]:has(div[data-icon=":material/info:"]) {
-    background-color: #73c9e5 !important;
-    border-left-color: #4aa3c2 !important;
-}
-div[data-testid="stAlert"]:has(div[data-icon=":material/info:"]) .st-cx {
-    color: #FFFFFF !important;  /* 白色文字，保证对比度 */
-}
-</style>
-""", unsafe_allow_html=True)
-
 st.title("“Don't Steal Music.”")
 st.markdown("仅供个人学习欣赏用，尊重创作，严禁商用")
 st.markdown("---")
