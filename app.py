@@ -20,22 +20,34 @@ def get_headers(bv=None):
 
 def url2bv(url):
     """从B站视频链接中提取BV号，支持标准链接和b23.tv短链接"""
-    # 1. 直接匹配标准链接（含www或m等）
-    match = re.search(r'bilibili\.com/video/(BV[a-zA-Z0-9]+)', url)
+    # 自动补充协议头
+    if not url.startswith(('http://', 'https://')):
+        url = 'https://' + url
+
+    # 1. 直接匹配标准链接（含www或m子域名）
+    match = re.search(r'(?:www\.|m\.)?bilibili\.com/video/(BV[a-zA-Z0-9]+)', url)
     if match:
         return match.group(1)
 
     # 2. 处理 b23.tv 短链接（需跟随重定向）
     if 'b23.tv' in url or 'b23.' in url:
         try:
-            resp = requests.head(url, allow_redirects=True, timeout=5)
+            # 使用 GET 请求跟随重定向，获取最终地址
+            resp = requests.get(url, allow_redirects=True, timeout=5)
             final_url = resp.url
-            match = re.search(r'bilibili\.com/video/(BV[a-zA-Z0-9]+)', final_url)
+            # 从重定向后的URL中提取BV号（兼容www/m子域名）
+            match = re.search(r'(?:www\.|m\.)?bilibili\.com/video/(BV[a-zA-Z0-9]+)', final_url)
             if match:
                 return match.group(1)
+            else:
+                # 可选的调试信息，便于排查问题
+                st.sidebar.warning(f"重定向后的URL未找到BV号: {final_url}")
+                return None
         except Exception as e:
             st.sidebar.error(f"短链接解析失败: {e}")
             return None
+
+    # 既不是标准链接也不是b23短链
     return None
 
 def get_video_info(bv):
