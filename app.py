@@ -92,6 +92,10 @@ def safe_filename(name):
 # -------------------- Streamlit 界面 --------------------
 st.set_page_config(page_title="Bilimusic +", page_icon="🎵", layout="wide")
 
+st.title("“Don't Steal Music.”")
+st.markdown("仅供个人学习欣赏用，尊重创作，严禁商用")
+st.markdown("---")
+
 # 初始化 session_state 变量
 if 'video_info' not in st.session_state:
     st.session_state.video_info = None
