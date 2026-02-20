@@ -8,6 +8,11 @@ import uuid
 from pathlib import Path
 
 # -------------------- 工具函数 --------------------
+def extract_last_url(text):
+    """从文本中提取最后一个以 http:// 或 https:// 开头的链接"""
+    urls = re.findall(r'(https?://[^\s\u4e00-\u9fa5]+)', text)
+    return urls[-1] if urls else text
+
 def get_headers(bv=None):
     """生成请求头，如果提供bv则添加Referer和Origin"""
     headers = {
@@ -117,7 +122,8 @@ with st.sidebar:
     url_input = st.text_input("输入视频链接，让我们开始吧", placeholder="https://www.bilibili.com/video/BVxxx 或 b23.tv/xxx")
 
     if url_input:
-        bv = url2bv(url_input)
+        clean_url = extract_last_url(url_input)
+        bv = url2bv(clean_url)
         if not bv:
             st.error("无法解析BV号，还请再次检查链接格式")
             st.session_state.video_info = None
