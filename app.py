@@ -168,7 +168,7 @@ with st.sidebar:
 if st.session_state.video_info:
     st.info(f"当前视频：**{st.session_state.video_info[0]}**  |  作者：**{st.session_state.video_info[1]}**")
 
-    if st.button("开始下载并转换", type="primary", use_container_width=True):
+    if st.button("开始吧！", type="primary", use_container_width=True):
         bv = st.session_state.last_bv
         music_title = st.session_state.music_title
         artist = st.session_state.artist
