@@ -133,7 +133,7 @@ if 'artist' not in st.session_state:
 # 侧边栏 - 输入与预览
 with st.sidebar:
     st.title("Bilimusic +")
-    st.markdown("轻量化图形化的B站音频提取工具")
+    st.markdown("轻量化的B站音频提取工具")
     st.markdown("---")
 
     url_input = st.text_input("输入视频链接，让我们开始吧", placeholder="https://www.bilibili.com/video/BVxxx 或 b23.tv/xxx")
