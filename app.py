@@ -19,8 +19,24 @@ def get_headers(bv=None):
     return headers
 
 def url2bv(url):
+    """从B站视频链接中提取BV号，支持标准链接和b23.tv短链接"""
+    # 1. 直接匹配标准链接（含www或m等）
     match = re.search(r'bilibili\.com/video/(BV[a-zA-Z0-9]+)', url)
-    return match.group(1) if match else None
+    if match:
+        return match.group(1)
+
+    # 2. 处理 b23.tv 短链接（需跟随重定向）
+    if 'b23.tv' in url or 'b23.' in url:
+        try:
+            resp = requests.head(url, allow_redirects=True, timeout=5)
+            final_url = resp.url
+            match = re.search(r'bilibili\.com/video/(BV[a-zA-Z0-9]+)', final_url)
+            if match:
+                return match.group(1)
+        except Exception as e:
+            st.sidebar.error(f"短链接解析失败: {e}")
+            return None
+    return None
 
 def get_video_info(bv):
     url = f"https://api.bilibili.com/x/web-interface/view?bvid={bv}"
@@ -32,10 +48,10 @@ def get_video_info(bv):
             video_data = data["data"]
             return video_data["title"], video_data["owner"]["name"], video_data["pic"]
         else:
-            st.error(f"API返回错误: {data}")
+            st.sidebar.error(f"API返回错误: {data}")
             return None
     except Exception as e:
-        st.error(f"获取视频信息失败: {e}")
+        st.sidebar.error(f"获取视频信息失败: {e}")
         return None
 
 def title2musicTitle(title):
@@ -74,90 +90,112 @@ def safe_filename(name):
     return name if name else "untitled"
 
 # -------------------- Streamlit 界面 --------------------
-st.set_page_config(page_title="Bilimusic +", page_icon="🎵")
-st.title("Bilimusic +")
-st.markdown("轻量化图形化的B站音频提取工具")
-st.markdown("")
-st.markdown("输入视频链接，我们开始吧——")
+st.set_page_config(page_title="Bilimusic +", page_icon="🎵", layout="wide")
 
-url_input = st.text_input("视频链接", placeholder="https://www.bilibili.com/video/BVxxx")
+# 初始化 session_state 变量
+if 'video_info' not in st.session_state:
+    st.session_state.video_info = None
+if 'preview_cover' not in st.session_state:
+    st.session_state.preview_cover = None
+if 'last_bv' not in st.session_state:
+    st.session_state.last_bv = None
+if 'music_title' not in st.session_state:
+    st.session_state.music_title = ""
+if 'artist' not in st.session_state:
+    st.session_state.artist = ""
 
-if url_input:
-    bv = url2bv(url_input)
-    if not bv:
-        st.error("无法解析BV号，还请再次检查链接格式")
-        st.stop()
-    st.success(f"解析到BV号：{bv}")
+# 侧边栏 - 输入与预览
+with st.sidebar:
+    st.title("bilimusic +")
+    st.markdown("轻量化图形化的B站音频提取工具")
+    st.markdown("")
 
-    with st.spinner("正在获取视频信息..."):
-        info = get_video_info(bv)
-    if not info:
-        st.error("获取视频信息失败，请检查BV号或网络")
-        st.stop()
-    title, author, pic_url = info
+    url_input = st.text_input("输入视频链接，让我们开始吧", placeholder="https://www.bilibili.com/video/BVxxx 或 b23.tv/xxx")
 
-    # ----- 下载封面用于预览（解决防盗链）-----
-    # 清理旧的预览文件
-    if 'preview_cover' in st.session_state:
-        old_file = Path(st.session_state['preview_cover'])
-        if old_file.exists():
-            try:
-                old_file.unlink()
-            except:
-                pass
+    if url_input:
+        bv = url2bv(url_input)
+        if not bv:
+            st.error("无法解析BV号，还请再次检查链接格式")
+            st.session_state.video_info = None
+        else:
+            st.success(f"解析到BV号：{bv}")
+            # 如果BV号变化，重新获取信息
+            if st.session_state.last_bv != bv:
+                with st.spinner("正在获取视频信息..."):
+                    info = get_video_info(bv)
+                if info:
+                    st.session_state.video_info = info
+                    st.session_state.last_bv = bv
+                    # 自动填充标题和作者
+                    title, author, pic_url = info
+                    st.session_state.music_title = title2musicTitle(title) or title
+                    st.session_state.artist = author
 
-    # 下载新的预览封面
-    preview_temp = Path(tempfile.gettempdir()) / f"preview_cover_{uuid.uuid4().hex}.jpg"
-    try:
-        with st.spinner("正在加载封面预览..."):
-            download_file(pic_url, get_headers(bv), preview_temp)
-        st.session_state['preview_cover'] = str(preview_temp)
-        st.session_state['last_bv'] = bv
-    except Exception as e:
-        st.error(f"封面预览下载失败: {e}")
-        st.session_state['preview_cover'] = None
+                    # 下载封面用于预览
+                    try:
+                        preview_temp = Path(tempfile.gettempdir()) / f"preview_cover_{uuid.uuid4().hex}.jpg"
+                        download_file(pic_url, get_headers(bv), preview_temp)
+                        # 清理旧预览
+                        if st.session_state.preview_cover and Path(st.session_state.preview_cover).exists():
+                            Path(st.session_state.preview_cover).unlink()
+                        st.session_state.preview_cover = str(preview_temp)
+                    except Exception as e:
+                        st.error(f"封面预览下载失败: {e}")
+                        st.session_state.preview_cover = None
+                else:
+                    st.session_state.video_info = None
 
-    auto_title = title2musicTitle(title) or title
-    st.info(f"原视频标题：{title}")
-    music_title = st.text_input("音乐标题", value=auto_title)
-    st.text(f"作者：{author}")
+    # 显示预览信息（如果存在）
+    if st.session_state.video_info:
+        st.markdown("---")
+        st.subheader("封面预览")
+        # 显示封面
+        if st.session_state.preview_cover and Path(st.session_state.preview_cover).exists():
+            st.image(st.session_state.preview_cover, caption="封面预览", width=250)
+        else:
+            # 保底显示URL
+            st.image(st.session_state.video_info[2], caption="封面预览（可能失败）", width=250)
 
-    # 显示本地图片（如果可用）
-    if st.session_state.get('preview_cover') and Path(st.session_state['preview_cover']).exists():
-        st.image(st.session_state['preview_cover'], caption="封面预览", width=300)
-    else:
-        # 保底显示URL（可能失败）
-        st.image(pic_url, caption="封面预览（直接加载可能失败）", width=300)
+        # 可编辑的标题和作者
+        st.session_state.music_title = st.text_input("音乐标题", value=st.session_state.music_title)
+        st.session_state.artist = st.text_input("作者", value=st.session_state.artist)
 
-    if st.button("开始下载并转换"):
+# 主界面 - 处理&流程
+if st.session_state.video_info:
+    st.info(f"当前视频：**{st.session_state.video_info[0]}**  |  作者：**{st.session_state.video_info[1]}**")
+
+    if st.button("开始下载并转换", type="primary", use_container_width=True):
+        bv = st.session_state.last_bv
+        music_title = st.session_state.music_title
+        artist = st.session_state.artist
+
         uid = uuid.uuid4().hex
         temp_dir = tempfile.gettempdir()
         audio_temp = Path(temp_dir) / f"temp_audio_{uid}.m4a"
-        # 优先使用已下载的预览封面
-        if st.session_state.get('preview_cover') and Path(st.session_state['preview_cover']).exists():
-            cover_temp = Path(st.session_state['preview_cover'])
-            need_clean_cover = False  # 标记不需要清理预览封面
+        # 封面使用已下载的预览文件
+        if st.session_state.preview_cover and Path(st.session_state.preview_cover).exists():
+            cover_temp = Path(st.session_state.preview_cover)
+            need_clean_cover = False
         else:
+            # 如果预览封面不存在，重新下载
             cover_temp = Path(temp_dir) / f"temp_cover_{uid}.jpg"
             need_clean_cover = True
+            pic_url = st.session_state.video_info[2]
+            with st.spinner("下载封面中..."):
+                download_file(pic_url, get_headers(bv), cover_temp)
 
         safe_name = safe_filename(music_title)
         output_mp3 = Path(temp_dir) / f"{safe_name}_{uid}.mp3"
 
         try:
-            # 如果预览封面不存在，则重新下载
-            if need_clean_cover:
-                with st.spinner("下载封面中..."):
-                    download_file(pic_url, get_headers(bv), cover_temp)
-                st.success("封面下载完成")
-
             # 获取cid
-            view_url = f"https://api.bilibili.com/x/web-interface/view?bvid={bv}"
-            view_res = requests.get(view_url, headers=get_headers(bv)).json()
-            if view_res.get('code') != 0:
-                st.error("获取视频cid失败")
-                st.stop()
-            cid = view_res['data']['pages'][0]['cid']
+            with st.spinner("获取视频信息..."):
+                view_url = f"https://api.bilibili.com/x/web-interface/view?bvid={bv}"
+                view_res = requests.get(view_url, headers=get_headers(bv)).json()
+                if view_res.get('code') != 0:
+                    st.error("获取视频cid失败")
+                    st.stop()
+                cid = view_res['data']['pages'][0]['cid']
 
             # 获取音频直链
             with st.spinner("获取音频链接..."):
@@ -180,7 +218,7 @@ if url_input:
                     '-map', '0:0',
                     '-map', '1:0',
                     '-metadata', f'title={music_title}',
-                    '-metadata', f'artist={author}',
+                    '-metadata', f'artist={artist}',
                     '-id3v2_version', '3',
                     '-codec:v', 'copy',
                     '-y',
@@ -199,7 +237,8 @@ if url_input:
                 label="点击下载 MP3",
                 data=mp3_bytes,
                 file_name=f"{safe_name}.mp3",
-                mime="audio/mpeg"
+                mime="audio/mpeg",
+                use_container_width=True
             )
 
         except Exception as e:
@@ -210,3 +249,5 @@ if url_input:
             output_mp3.unlink(missing_ok=True)
             if need_clean_cover:
                 cover_temp.unlink(missing_ok=True)
+else:
+    st.info("请在左侧边栏输入视频链接开始使用。")
