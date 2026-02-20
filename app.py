@@ -18,6 +18,11 @@ def get_headers(bv=None):
         headers['Origin'] = 'https://www.bilibili.com'
     return headers
 
+def extract_url_from_text(text):
+    """从混合文本中提取最后一个http链接"""
+    urls = re.findall(r'(https?://[^\s\u4e00-\u9fa5]+)', text)
+    return urls[-1] if urls else text
+
 def url2bv(url):
     """从B站视频链接中提取BV号，支持标准链接和b23.tv短链接"""
     # 自动补充协议头
@@ -122,20 +127,20 @@ if 'artist' not in st.session_state:
 
 # 侧边栏 - 输入与预览
 with st.sidebar:
-    st.title("Bilimusic +")
-    st.markdown("轻量化的B站音频提取工具")
-    st.markdown("---")
-
+    # ... (侧边栏标题等保持不变) ...
     url_input = st.text_input("输入视频链接，让我们开始吧", placeholder="https://www.bilibili.com/video/BVxxx 或 b23.tv/xxx")
 
     if url_input:
-        bv = url2bv(url_input)
+        # ===== 关键修改：先提取纯净链接 =====
+        clean_url = extract_url_from_text(url_input)
+        bv = url2bv(clean_url)
+        # ==================================
         if not bv:
             st.error("无法解析BV号，还请再次检查链接格式")
             st.session_state.video_info = None
         else:
+            # ... (后续获取视频信息的代码完全不变) ...
             st.info(f"解析到BV号：{bv}")
-            # 如果BV号变化，重新获取信息
             if st.session_state.last_bv != bv:
                 with st.spinner("正在获取视频信息..."):
                     info = get_video_info(bv)
