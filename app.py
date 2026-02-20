@@ -214,7 +214,7 @@ if st.session_state.video_info:
             st.info("音频下载好了")
 
             # 使用ffmpeg合成MP3
-            with st.spinner("正在合成MP3并添加元数据..."):
+            with st.spinner("在转换格式..."):
                 ffmpeg_cmd = [
                     'ffmpeg',
                     '-i', str(audio_temp),
