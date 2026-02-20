@@ -122,7 +122,7 @@ with st.sidebar:
             st.error("无法解析BV号，还请再次检查链接格式")
             st.session_state.video_info = None
         else:
-            st.success(f"解析到BV号：{bv}")
+            st.info(f"解析到BV号：{bv}")
             # 如果BV号变化，重新获取信息
             if st.session_state.last_bv != bv:
                 with st.spinner("正在获取视频信息..."):
@@ -155,10 +155,10 @@ with st.sidebar:
         st.subheader("封面预览")
         # 显示封面
         if st.session_state.preview_cover and Path(st.session_state.preview_cover).exists():
-            st.image(st.session_state.preview_cover, caption="封面预览", width=250)
+            st.image(st.session_state.preview_cover, width=250)
         else:
             # 保底显示URL
-            st.image(st.session_state.video_info[2], caption="封面预览（可能失败）", width=250)
+            st.image(st.session_state.video_info[2], width=250)
 
         # 可编辑的标题和作者
         st.session_state.music_title = st.text_input("音乐标题", value=st.session_state.music_title)
@@ -206,12 +206,12 @@ if st.session_state.video_info:
                 audio_url = get_audio_download_url(bv, cid)
             if not audio_url:
                 st.stop()
-            st.success("链接获取好了")
+            st.info("链接获取好了")
 
             # 下载音频
             with st.spinner("在下载音频..."):
                 download_file(audio_url, get_headers(bv), audio_temp)
-            st.success("音频下载好了")
+            st.info("音频下载好了")
 
             # 使用ffmpeg合成MP3
             with st.spinner("正在合成MP3并添加元数据..."):
@@ -232,7 +232,7 @@ if st.session_state.video_info:
                 if result.returncode != 0:
                     st.error(f"FFmpeg 转换失败，错误信息：\n{result.stderr}")
                     raise Exception("FFmpeg error")
-            st.success("格式转换好了")
+            st.info("格式转换好了")
 
             # 提供下载按钮
             with open(output_mp3, "rb") as f:
