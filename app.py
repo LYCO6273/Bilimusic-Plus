@@ -106,9 +106,9 @@ if 'artist' not in st.session_state:
 
 # 侧边栏 - 输入与预览
 with st.sidebar:
-    st.title("bilimusic +")
+    st.title("Bilimusic +")
     st.markdown("轻量化图形化的B站音频提取工具")
-    st.markdown("")
+    st.markdown("---")
 
     url_input = st.text_input("输入视频链接，让我们开始吧", placeholder="https://www.bilibili.com/video/BVxxx 或 b23.tv/xxx")
 
@@ -198,16 +198,16 @@ if st.session_state.video_info:
                 cid = view_res['data']['pages'][0]['cid']
 
             # 获取音频直链
-            with st.spinner("获取音频链接..."):
+            with st.spinner("在获取链接..."):
                 audio_url = get_audio_download_url(bv, cid)
             if not audio_url:
                 st.stop()
             st.success("获取音频链接成功")
 
             # 下载音频
-            with st.spinner("下载音频中（可能较慢）..."):
+            with st.spinner("在下载音频..."):
                 download_file(audio_url, get_headers(bv), audio_temp)
-            st.success("音频下载完成")
+            st.success("音频下载好了")
 
             # 使用ffmpeg合成MP3
             with st.spinner("正在合成MP3并添加元数据..."):
@@ -250,4 +250,4 @@ if st.session_state.video_info:
             if need_clean_cover:
                 cover_temp.unlink(missing_ok=True)
 else:
-    st.info("请在左侧边栏输入视频链接开始使用。")
+    st.info("在侧边栏输入视频链接开始吧")
